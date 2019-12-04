@@ -2,27 +2,32 @@ import pandas as pd
 import numpy as np
 from scipy.stats.contingency import expected_freq
 
-def tabella_di_contingenza(dataframe, colonna_A, colonna_B, ordine_A = False, ordine_B = False, informativo = False, norm_axis = False):
+def contingency_table(dataframe, columns_a, columns_b, order_a = False, order_b = False, informative = True, norm_axis = False):
     '''
-    dataframe: inserire la tabella su cui si vuole fare la tabulazione incrociata
-    colonna_A: inserire la stringa di testo che rappresenta l'intestazione della singola colonna
-    colonna_B: inserire la stringa di testo che rappresenta l'intestazione della singola colonna
-    ordine_A: inserire una lista di valori rappresentativi dell'ordine delle categorie della colonna A
-    ordine_B: inserire una lista di valori rappresentativi dell'ordine delle categorie della colonna B
-    informativo: True, permette di avere in una stessa tabella frequenze, frequenze attese e scarti. 
+    dataframe: enter the table on which you want to make the cross tabulation
+    columns_a:  insert the text string representing the header of the single column
+    columns_b:  insert the text string representing the header of the single column
+    order_a: insert a list of values representative of the order of the categories in column A
+    order_b:  insert a list of values representative of the order of the categories in column B
+    informative: True, allows you to have in the same table frequencies, expected frequencies and discards. 
     '''
     
-    crosstab = pd.crosstab(dataframe[colonna_A],dataframe[colonna_B], margins = True)
+    if order_a != False:
+        dataframe[columns_a] = pd.Categorical(dataframe[columns_a], categories=order_a)
+        
+    if order_b != False:
+        dataframe[columns_b] = pd.Categorical(dataframe[columns_b], categories=order_b)
+        
+
+    crosstab = pd.crosstab(dataframe[columns_a],dataframe[columns_b], margins = True, dropna=False)
     
-    if ordine_A != False:
-        crosstab = crosstab.reindex(ordine_A, axis = 0)
-    if ordine_B != False:
-        crosstab = crosstab.reindex(ordine_B, axis = 1)
-    if informativo == True:
+    
+        
+    if informative == True:
         expected = pd.DataFrame(expected_freq(crosstab), index =  crosstab.index, columns = crosstab.columns)
-        crosstab_norm_all = pd.crosstab(dataframe[colonna_A],dataframe[colonna_B], margins = True, normalize = "all").applymap(lambda x: ("( {:.2f})".format(x) ))
-        crosstab_norm_index = pd.crosstab(dataframe[colonna_A],dataframe[colonna_B], margins = True, normalize = "index").applymap(lambda x: ("( {:.2f})".format(x) ))
-        crosstab_norm_columns = pd.crosstab(dataframe[colonna_A],dataframe[colonna_B], margins = True, normalize = "columns").applymap(lambda x: ("( {:.2f})".format(x) ))
+        crosstab_norm_all = pd.crosstab(dataframe[columns_a],dataframe[columns_b], margins = True, normalize = "all", dropna=False).applymap(lambda x: ("( {:.2f})".format(x) ))
+        crosstab_norm_index = pd.crosstab(dataframe[columns_a],dataframe[columns_b], margins = True, normalize = "index", dropna=False).applymap(lambda x: ("( {:.2f})".format(x) ))
+        crosstab_norm_columns = pd.crosstab(dataframe[columns_a],dataframe[columns_b], margins = True, normalize = "columns", dropna=False).applymap(lambda x: ("( {:.2f})".format(x) ))
         if norm_axis == False:
             crosstab = crosstab.applymap(str) + " " + expected.applymap(lambda x: ("( {:.2f})".format(x) )) + " " + (crosstab - expected).applymap(lambda x: ("( {:.2f})".format(x) )) + " " + crosstab_norm_all
         if norm_axis == "index":
@@ -31,3 +36,29 @@ def tabella_di_contingenza(dataframe, colonna_A, colonna_B, ordine_A = False, or
             crosstab = crosstab.applymap(str) + " " + expected.applymap(lambda x: ("( {:.2f})".format(x) )) + " " + (crosstab - expected).applymap(lambda x: ("( {:.2f})".format(x) )) + " " + crosstab_norm_columns
       
     return crosstab
+
+if __name__ == '__main__':
+    data = pd.DataFrame({
+        "key_a" : ["high", "medium", "low", "low", "low"],
+        "key_b" : ["1","1","3","3","3"]
+    })
+    data2 = pd.DataFrame({
+        "key_a" : [1, 2, 3, 4, 5],
+        "key_b" : ["ugo","1","3","3","3"]
+    })
+
+
+    # test ordinal values 
+    print(contingency_table(data,
+                            "key_a",
+                            "key_b",
+                            order_a = ["low","medium","high"],
+                            order_b = ["1","2","3"],
+                            informative = True, 
+                            norm_axis = False))
+    # test categorical values
+    print(contingency_table(data2,
+                            "key_a",
+                            "key_b",
+                            informative = True, 
+                            norm_axis = False))

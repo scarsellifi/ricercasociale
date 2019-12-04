@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='socialscience',
-      version='0.2',
+      version='0.2.1',
       description='',
       url='https://github.com/scarsellifi/socialscience.git',
       author='Marco Scarselli',
